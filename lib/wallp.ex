@@ -30,15 +30,16 @@ defmodule Wallp do
   end
 
   def parse(body) do
-    Regex.scan(~r{download="(http[\S]+files/images/wallpaper/[\S]*2560[\S]+.jpg)}, body, capture: :all_but_first)
-    |> List.flatten
+    # List anchor tags with a download attribute value
+    body
+    |> Floki.attribute("a","download")
   end
 
   def process(locations) do
-    Enum.map(locations, &_process(&1))
+    Enum.map(locations, &Task.start(__MODULE__,:_process, [&1]))
   end
 
-  defp _process(location) do
+  def _process(location) do
     # Fetch image
     %HTTPoison.Response{body: body} = HTTPoison.get!(location)
 
@@ -47,6 +48,6 @@ defmodule Wallp do
 
     # Save image to Downloads folder by file name
     Logger.info("Downloading #{file_name}")
-    File.write!("/Users/billc/Downloads/#{file_name}", body)
+    File.write!("/Users/billc/Downloads/wallp/#{file_name}", body)
   end
 end
